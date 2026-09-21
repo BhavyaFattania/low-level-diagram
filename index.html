@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AI Interview Analyzer — Low Level Class Diagram</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({ startOnLoad: true, theme: 'dark', securityLevel: 'loose', class: { hideEmptyMembersBox: false } });</script>
+<style>
+  :root { --bg:#0f172a; --panel:#1e293b; --border:#334155; --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family: 'Segoe UI', system-ui, Arial, sans-serif; background:var(--bg); color:var(--text); }
+  header { padding:28px 32px; border-bottom:1px solid var(--border); background:linear-gradient(135deg,#0f172a,#1e3a5f); position:sticky; top:0; z-index:10; }
+  header h1 { margin:0; font-size:24px; }
+  header p { margin:6px 0 0; color:var(--muted); }
+  .badges { margin-top:10px; display:flex; gap:8px; flex-wrap:wrap; }
+  .badge { font-size:12px; padding:4px 10px; border:1px solid var(--border); border-radius:20px; background:#0b1220; color:var(--accent); }
+  main { padding:24px 32px 80px; max-width:1400px; margin:0 auto; }
+  section.panel { background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:20px 22px; margin-bottom:24px; }
+  section.panel h2 { margin:0 0 6px; font-size:18px; color:var(--accent); }
+  section.panel p.desc { margin:0 0 14px; color:var(--muted); font-size:14px; }
+  .mermaid { background:#0b1220; border:1px solid var(--border); border-radius:8px; padding:16px; overflow:auto; }
+  pre.src { background:#020617; border:1px solid var(--border); border-radius:8px; padding:14px; overflow:auto; font-size:12px; max-height:520px; color:#cbd5e1; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media(max-width:1000px){ .grid2{grid-template-columns:1fr;} main{padding:16px;} }
+  table { width:100%; border-collapse:collapse; font-size:13px; margin-top:12px; }
+  th,td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--border); }
+  th { color:var(--accent); }
+  footer { text-align:center; color:var(--muted); font-size:12px; padding:20px; }
+  a { color:var(--accent); }
+  .toolbar { display:flex; gap:8px; margin:10px 0; flex-wrap:wrap; }
+  .toolbar button { background:#0b1220; color:var(--text); border:1px solid var(--border); border-radius:6px; padding:6px 12px; cursor:pointer; }
+  .toolbar button:hover { border-color:var(--accent); }
+  .fullscreen-btn { display:inline-block; margin:6px 0 4px; padding:12px 22px; font-size:15px; font-weight:600; color:#0b1220; background:var(--accent); border-radius:8px; text-decoration:none; }
+  .fullscreen-btn:hover { filter:brightness(1.15); }
+</style>
+</head>
+<body>
+<header>
+  <h1>AI Interview Analyzer &amp; Candidate Evaluation System — Low-Level Class Diagram</h1>
+  <p>FastAPI + Pydantic + SQLAlchemy &nbsp;|&nbsp; Strategy / Repository / Adapter / DI patterns &nbsp;|&nbsp; Version 1.0 — Generated from <code>backend/app</code></p>
+  <div class="badges">
+    <span class="badge">Domain (8)</span><span class="badge">ORM (6)</span><span class="badge">Schemas (11)</span>
+    <span class="badge">Repositories (18)</span><span class="badge">Services (4)</span><span class="badge">Evaluation (9)</span>
+    <span class="badge">Core (5)</span><span class="badge">API Routers (4)</span>
+  </div>
+  <div class="toolbar">
+    <button onclick="document.querySelectorAll('pre.src').forEach(e=>e.style.display=e.style.display==='none'?'block':'none')">Toggle source</button>
+    <button onclick="window.print()">Print / PDF</button>
+    <a href="#full">Full diagram</a><a href="#domain">Domain</a><a href="#persistence">Persistence</a><a href="#evaluation">Evaluation</a><a href="#services">Services</a><a href="#api">API+Schemas</a>
+  </div>
+</header>
+<main>
+
+<section class="panel" id="full">
+<h2>0. Full Low-Level Class Diagram (complete system)</h2>
+<p class="desc">The complete diagram lives on its own dedicated page — opens in a new tab with pan, zoom &amp; fullscreen controls.</p>
+<a class="fullscreen-btn" href="class-diagram-full.html" target="_blank" rel="noopener">⛶ &nbsp;Open full diagram in fullscreen</a>
+<p class="desc" style="margin-top:10px">Tip: press the ⛶ button on that page (or F11) for true fullscreen. To copy the Mermaid source, right-click → View source on that page.</p>
+<div class="mermaid" style="display:none">
+classDiagram
+  %% ============ DOMAIN ============
+  class Candidate {
+    +string candidate_id
+    +string name
+    +datetime created_at
+    +add_response(response) void
+  }
+  class CandidateResponse {
+    +string response_id
+    +string interview_id
+    +string question_id
+    +string answer
+    +datetime submitted_at
+  }
+  class Question {
+    +string question_id
+    +string question_text
+    +string expected_answer
+    +string category
+    +string difficulty
+  }
+  class Interview {
+    +string interview_id
+    +string candidate_id
+    +InterviewStatus status
+    +start() void
+    +complete() void
+    +fail() void
+  }
+  class InterviewStatus {
+    &lt;&lt;enumeration&gt;&gt;
+    CREATED
+    IN_PROGRESS
+    COMPLETED
+    FAILED
+  }
+  class QuestionEvaluation {
+    +string evaluation_id
+    +string response_id
+    +string question_id
+    +float tfidf_score
+    +float embedding_score
+    +float relevancy_score
+    +float concept_coverage_score
+  }
+  class CandidateProfile {
+    +string candidate_id
+    +string interview_id
+    +float overall_score
+  }
+  class InterviewReport {
+    +string report_id
+    +string candidate_id
+    +string interview_id
+    +float overall_score
+    +string summary
+  }
+  Candidate "1" --> "*" CandidateResponse : holds responses
+  CandidateProfile "1" --> "*" QuestionEvaluation : aggregates
+  Interview --> InterviewStatus : uses
+  %% ============ ORM ============
+  class Base {
+    &lt;&lt;DeclarativeBase&gt;&gt;
+  }
+  class CandidateORM {
+    +string candidate_id PK
+    +string name
+    +datetime created_at
+  }
+  class QuestionORM {
+    +string question_id PK
+    +string question_text
+    +string expected_answer
+    +string category
+    +string difficulty
+  }
+  class InterviewORM {
+    +string interview_id PK
+    +string candidate_id FK
+    +string status
+  }
+  class ResponseORM {
+    +string response_id PK
+    +string interview_id FK
+    +string question_id FK
+    +string candidate_answer
+  }
+  class EvaluationORM {
+    +string evaluation_id PK
+    +string response_id FK UNIQUE
+    +float tfidf_score
+    +float embedding_score
+    +float relevancy_score
+    +float concept_coverage_score
+  }
+  class ReportORM {
+    +string report_id PK
+    +string interview_id FK UNIQUE
+    +float overall_score
+    +string summary
+  }
+  Base &lt;|-- CandidateORM
+  Base &lt;|-- QuestionORM
+  Base &lt;|-- InterviewORM
+  Base &lt;|-- ResponseORM
+  Base &lt;|-- EvaluationORM
+  Base &lt;|-- ReportORM
+  CandidateORM "1" &lt;-- "*" InterviewORM : FK candidate_id
+  InterviewORM "1" &lt;-- "*" ResponseORM : FK interview_id
+  QuestionORM "1" &lt;-- "*" ResponseORM : FK question_id
+  ResponseORM "1" &lt;-- "1" EvaluationORM : FK response_id UNIQUE
+  InterviewORM "1" &lt;-- "1" ReportORM : FK interview_id UNIQUE
+  %% ============ EVALUATION ENGINE ============
+  class SimilarityStrategy {
+    &lt;&lt;abstract&gt;&gt;
+    +calculate(candidate, expected) float
+  }
+  class TFIDFSimilarity {
+    -bool use_sklearn
+    +calculate(candidate, expected) float
+    +uses_sklearn() bool
+  }
+  class EmbeddingSimilarity {
+    +string model_name
+    +calculate(candidate, expected) float
+    +uses_fallback() bool
+  }
+  class LLMRelevancyEvaluator {
+    +evaluate(question, candidate, expected) RelevancyResult
+  }
+  class RelevancyResult {
+    +float relevancy_score
+    +string reasoning
+    +float confidence
+  }
+  class ConceptExtractor {
+    +extract(candidate, expected_concepts) List
+  }
+  class ConceptCoverageEvaluator {
+    +evaluate(identified, expected) float
+    +missing(identified, expected) List
+  }
+  class LLMFeedbackAnalyzer {
+    +analyze(question, candidate, expected) FeedbackResult
+  }
+  class FeedbackResult {
+    +List strengths
+    +List weaknesses
+    +List missing_concepts
+    +List improvements
+  }
+  class EvaluationService {
+    +evaluate(inp) QuestionEvaluation
+    +aggregate_profile(cid, iid, evals) CandidateProfile
+    +generate_report(profile) InterviewReport
+  }
+  class EvaluationInput {
+    +string question_id
+    +string question_text
+    +string expected_answer
+    +string candidate_answer
+    +string response_id
+  }
+  SimilarityStrategy &lt;|-- TFIDFSimilarity : Strategy
+  SimilarityStrategy &lt;|-- EmbeddingSimilarity : Strategy
+  EvaluationService --> SimilarityStrategy : tfidf
+  EvaluationService --> SimilarityStrategy : embedding
+  EvaluationService --> LLMRelevancyEvaluator : relevancy_evaluator
+  EvaluationService --> ConceptExtractor : concept_extractor
+  EvaluationService --> ConceptCoverageEvaluator : concept_coverage
+  EvaluationService --> LLMFeedbackAnalyzer : feedback_analyzer
+  LLMRelevancyEvaluator --> RelevancyResult : returns
+  LLMFeedbackAnalyzer --> FeedbackResult : returns
+  EvaluationService ..> EvaluationInput : consumes
+  EvaluationService ..> QuestionEvaluation : creates
+  EvaluationService ..> CandidateProfile : creates
+  EvaluationService ..> InterviewReport : creates
+  %% ============ CORE / LLM ============
+  class LLMClient {
+    &lt;&lt;abstract&gt;&gt;
+    +generate(prompt) string
+  }
+  class MockLLMClient {
+    +generate(prompt) string
+  }
+  class OpenAIAdapter {
+    +string model
+    +generate(prompt) string
+  }
+  class LLMConfig {
+    +string provider
+    +string model
+  }
+  class Settings {
+    +string DATABASE_URL
+    +string LLM_PROVIDER
+    +string LLM_MODEL
+    +string EMBEDDING_MODEL
+    +float W_TFIDF
+    +float W_EMB
+  }
+  LLMClient &lt;|-- MockLLMClient
+  LLMClient &lt;|-- OpenAIAdapter
+  LLMRelevancyEvaluator --> LLMClient : llm_client
+  LLMFeedbackAnalyzer --> LLMClient : llm_client
+  %% ============ REPOSITORIES ============
+  class CandidateRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(c) Candidate
+    +get_by_id(id) Candidate
+    +list_all() List
+  }
+  class SACandidateRepository {
+    +save(c) Candidate
+    +get_by_id(id) Candidate
+  }
+  class QuestionRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(q) Question
+    +get_by_id(id) Question
+    +get_random() Question
+  }
+  class SAQuestionRepository {
+    +save(q) Question
+    +get_random() Question
+  }
+  class InterviewRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(i) Interview
+    +get_by_id(id) Interview
+  }
+  class SAInterviewRepository {
+    +save(i) Interview
+    +get_by_id(id) Interview
+  }
+  class ResponseRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(r) CandidateResponse
+    +get_by_id(id) CandidateResponse
+  }
+  class SAResponseRepository {
+    +save(r) CandidateResponse
+  }
+  class EvaluationRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(e) QuestionEvaluation
+    +get_by_id(id) QuestionEvaluation
+  }
+  class SAEvaluationRepository {
+    +save(e) QuestionEvaluation
+    +get_by_interview_id(iid) List
+  }
+  class ReportRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(r) InterviewReport
+    +get_by_interview_id(iid) InterviewReport
+  }
+  class SAReportRepository {
+    +save(r) InterviewReport
+  }
+  CandidateRepository &lt;|-- SACandidateRepository
+  QuestionRepository &lt;|-- SAQuestionRepository
+  InterviewRepository &lt;|-- SAInterviewRepository
+  ResponseRepository &lt;|-- SAResponseRepository
+  EvaluationRepository &lt;|-- SAEvaluationRepository
+  ReportRepository &lt;|-- SAReportRepository
+  SACandidateRepository ..> Candidate : persists
+  SACandidateRepository ..> CandidateORM : maps
+  SAQuestionRepository ..> Question : persists
+  SAInterviewRepository ..> Interview : persists
+  SAResponseRepository ..> CandidateResponse : persists
+  SAEvaluationRepository ..> QuestionEvaluation : persists
+  SAReportRepository ..> InterviewReport : persists
+  %% ============ SERVICES ============
+  class CandidateService {
+    +create_candidate(name) Candidate
+    +get_candidate(id) Candidate
+    +list_candidates() List
+  }
+  class InterviewService {
+    +create_interview(cid) Interview
+    +start_interview(iid) Tuple
+    +submit_answer(iid, qid, ans) Tuple
+    +complete_interview(iid) Interview
+  }
+  class ReportService {
+    +generate_report(iid) InterviewReport
+    +get_report(iid) InterviewReport
+  }
+  CandidateService --> CandidateRepository : repo
+  InterviewService --> InterviewRepository : interview_repo
+  InterviewService --> QuestionRepository : question_repo
+  InterviewService --> ResponseRepository : response_repo
+  InterviewService --> EvaluationRepository : evaluation_repo
+  InterviewService --> EvaluationService : evaluation_service
+  ReportService --> ReportRepository : report_repo
+  ReportService --> EvaluationRepository : evaluation_repo
+  ReportService --> InterviewRepository : interview_repo
+  ReportService --> EvaluationService : evaluation_service
+  %% ============ SCHEMAS + API ============
+  class CandidateCreate {
+    +string name
+  }
+  class CandidateRead {
+    +string candidate_id
+    +string name
+  }
+  class InterviewCreate {
+    +string candidate_id
+    +string category
+    +int question_count
+  }
+  class InterviewRead {
+    +string interview_id
+    +string status
+  }
+  class QuestionPublic {
+    +string question_id
+    +string question
+  }
+  class EvaluationScores {
+    +float tfidf
+    +float embedding
+    +float relevancy
+    +float concept_coverage
+  }
+  class EvaluationRead {
+    +string evaluation_id
+    +string response_id
+  }
+  class ReportRead {
+    +string interview_id
+    +float overall_score
+    +string summary
+  }
+  class CandidatesRouter {
+    &lt;&lt;APIRouter&gt;&gt;
+    +POST /candidates
+    +GET /candidates/id
+  }
+  class InterviewsRouter {
+    &lt;&lt;APIRouter&gt;&gt;
+    +POST /interviews
+    +POST /interviews/id/start
+    +POST /interviews/id/responses
+  }
+  class EvaluationsRouter {
+    &lt;&lt;APIRouter&gt;&gt;
+    +GET /evaluations/id
+  }
+  class ReportsRouter {
+    &lt;&lt;APIRouter&gt;&gt;
+    +POST /reports/interviews/id/report
+    +GET /reports/interviews/id/report
+  }
+  CandidatesRouter ..> CandidateService : Depends
+  InterviewsRouter ..> InterviewService : Depends
+  EvaluationsRouter ..> SAEvaluationRepository : uses
+  ReportsRouter ..> ReportService : Depends
+  EvaluationRead --> EvaluationScores : scores
+</div>
+<pre class="src">The full Mermaid source now lives in <a href="class-diagram-full.html" target="_blank">class-diagram-full.html</a> (right-click → View source there to copy it).</pre>
+</section>
+
+<section class="panel" id="domain">
+<h2>1. Domain Layer (pure business objects — no FastAPI / no DB)</h2>
+<p class="desc">Dataclasses. <code>Candidate 1—* CandidateResponse</code>, <code>CandidateProfile 1—* QuestionEvaluation</code>, <code>Interview → InterviewStatus</code>.</p>
+<div class="mermaid">
+classDiagram
+  class Candidate {
+    +string candidate_id
+    +string name
+    +datetime created_at
+    +add_response(response) void
+  }
+  class CandidateResponse {
+    +string response_id
+    +string interview_id
+    +string question_id
+    +string answer
+    +datetime submitted_at
+  }
+  class Question {
+    +string question_id
+    +string question_text
+    +string expected_answer
+    +string category
+    +string difficulty
+    +List expected_concepts
+  }
+  class Interview {
+    +string interview_id
+    +string candidate_id
+    +InterviewStatus status
+    +start() void
+    +complete() void
+    +fail() void
+  }
+  class InterviewStatus {
+    &lt;&lt;enumeration&gt;&gt;
+    CREATED
+    IN_PROGRESS
+    COMPLETED
+    FAILED
+  }
+  class QuestionEvaluation {
+    +string evaluation_id
+    +string response_id
+    +float tfidf_score
+    +float embedding_score
+    +float relevancy_score
+    +float concept_coverage_score
+    +List identified_concepts
+    +List missing_concepts
+  }
+  class CandidateProfile {
+    +string candidate_id
+    +string interview_id
+    +float overall_score
+    +Dict aggregate_scores
+  }
+  class InterviewReport {
+    +string report_id
+    +string interview_id
+    +float overall_score
+    +string summary
+    +List recommendations
+  }
+  Candidate "1" --> "*" CandidateResponse : holds
+  CandidateProfile "1" --> "*" QuestionEvaluation : aggregates
+  Interview --> InterviewStatus : status
+</div>
+</section>
+
+<section class="panel" id="persistence">
+<h2>2. Persistence Layer (SQLAlchemy ORM + Repository pattern)</h2>
+<p class="desc">All ORM models inherit <code>Base(DeclarativeBase)</code>. Each domain type has an ABC repository + InMemory (tests) + SA (SQLAlchemy) implementation. FK chain: Candidate → Interview → Response → Evaluation; Interview → Report.</p>
+<div class="mermaid">
+classDiagram
+  class Base {
+    &lt;&lt;DeclarativeBase&gt;&gt;
+  }
+  class CandidateORM {
+    +string candidate_id PK
+    +string name
+  }
+  class QuestionORM {
+    +string question_id PK
+    +string expected_answer
+  }
+  class InterviewORM {
+    +string interview_id PK
+    +string candidate_id FK
+    +string status
+  }
+  class ResponseORM {
+    +string response_id PK
+    +string interview_id FK
+    +string question_id FK
+    +string candidate_answer
+  }
+  class EvaluationORM {
+    +string evaluation_id PK
+    +string response_id FK UNIQUE
+    +float tfidf_score
+    +float embedding_score
+  }
+  class ReportORM {
+    +string report_id PK
+    +string interview_id FK UNIQUE
+    +float overall_score
+  }
+  class CandidateRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(c) Candidate
+    +get_by_id(id) Candidate
+  }
+  class SACandidateRepository {
+    +save(c) Candidate
+  }
+  class QuestionRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +get_random() Question
+  }
+  class SAQuestionRepository {
+    +get_random() Question
+  }
+  class InterviewRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(i) Interview
+  }
+  class SAInterviewRepository {
+    +save(i) Interview
+  }
+  class ResponseRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(r) CandidateResponse
+  }
+  class SAResponseRepository {
+    +save(r) CandidateResponse
+  }
+  class EvaluationRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(e) QuestionEvaluation
+  }
+  class SAEvaluationRepository {
+    +save(e) QuestionEvaluation
+  }
+  class ReportRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(r) InterviewReport
+  }
+  class SAReportRepository {
+    +save(r) InterviewReport
+  }
+  Base &lt;|-- CandidateORM
+  Base &lt;|-- QuestionORM
+  Base &lt;|-- InterviewORM
+  Base &lt;|-- ResponseORM
+  Base &lt;|-- EvaluationORM
+  Base &lt;|-- ReportORM
+  CandidateRepository &lt;|-- SACandidateRepository
+  QuestionRepository &lt;|-- SAQuestionRepository
+  InterviewRepository &lt;|-- SAInterviewRepository
+  ResponseRepository &lt;|-- SAResponseRepository
+  EvaluationRepository &lt;|-- SAEvaluationRepository
+  ReportRepository &lt;|-- SAReportRepository
+  CandidateORM "1" &lt;-- "*" InterviewORM : FK
+  InterviewORM "1" &lt;-- "*" ResponseORM : FK
+  ResponseORM "1" &lt;-- "1" EvaluationORM : UNIQUE FK
+  InterviewORM "1" &lt;-- "1" ReportORM : UNIQUE FK
+</div>
+</section>
+
+<section class="panel" id="evaluation">
+<h2>3. Evaluation Engine (Strategy + LLM abstraction)</h2>
+<p class="desc"><code>SimilarityStrategy</code> is the Strategy port (TF-IDF / Embedding interchangeable). <code>LLMClient</code> is the Adapter port (Mock / OpenAI). <code>EvaluationService</code> orchestrates all six sub-evaluators.</p>
+<div class="mermaid">
+classDiagram
+  class SimilarityStrategy {
+    &lt;&lt;abstract&gt;&gt;
+    +calculate(cand, exp) float
+  }
+  class TFIDFSimilarity {
+    +calculate(cand, exp) float
+  }
+  class EmbeddingSimilarity {
+    +string model_name
+    +calculate(cand, exp) float
+  }
+  class LLMClient {
+    &lt;&lt;abstract&gt;&gt;
+    +generate(prompt) string
+  }
+  class MockLLMClient {
+    +generate(prompt) string
+  }
+  class OpenAIAdapter {
+    +generate(prompt) string
+  }
+  class LLMRelevancyEvaluator {
+    +evaluate(q, cand, exp) RelevancyResult
+  }
+  class RelevancyResult {
+    +float relevancy_score
+    +float confidence
+  }
+  class ConceptExtractor {
+    +extract(cand, expected) List
+  }
+  class ConceptCoverageEvaluator {
+    +evaluate(id, exp) float
+    +missing(id, exp) List
+  }
+  class LLMFeedbackAnalyzer {
+    +analyze(q, cand, exp) FeedbackResult
+  }
+  class FeedbackResult {
+    +List strengths
+    +List weaknesses
+  }
+  class EvaluationService {
+    +evaluate(inp) QuestionEvaluation
+    +aggregate_profile(cid,iid,evals) CandidateProfile
+    +generate_report(profile) InterviewReport
+  }
+  SimilarityStrategy &lt;|-- TFIDFSimilarity
+  SimilarityStrategy &lt;|-- EmbeddingSimilarity
+  LLMClient &lt;|-- MockLLMClient
+  LLMClient &lt;|-- OpenAIAdapter
+  EvaluationService --> SimilarityStrategy : tfidf/embedding
+  EvaluationService --> LLMRelevancyEvaluator : relevancy
+  EvaluationService --> ConceptExtractor : extractor
+  EvaluationService --> ConceptCoverageEvaluator : coverage
+  EvaluationService --> LLMFeedbackAnalyzer : feedback
+  LLMRelevancyEvaluator --> LLMClient : client
+  LLMFeedbackAnalyzer --> LLMClient : client
+  LLMRelevancyEvaluator --> RelevancyResult : creates
+  LLMFeedbackAnalyzer --> FeedbackResult : creates
+</div>
+</section>
+
+<section class="panel" id="services">
+<h2>4. Application Services (use-case orchestration + DI)</h2>
+<p class="desc">Services depend on repository <em>abstractions</em> (DIP), injected via <code>core/dependencies.py</code> with FastAPI <code>Depends()</code>.</p>
+<div class="mermaid">
+classDiagram
+  class CandidateService {
+    +create_candidate(name) Candidate
+    +get_candidate(id) Candidate
+    +list_candidates() List
+  }
+  class InterviewService {
+    +create_interview(cid) Interview
+    +start_interview(iid) Tuple
+    +submit_answer(iid,qid,ans) Tuple
+    +complete_interview(iid) Interview
+  }
+  class ReportService {
+    +generate_report(iid) InterviewReport
+    +get_report(iid) InterviewReport
+  }
+  class EvaluationService {
+    +evaluate(inp) QuestionEvaluation
+    +aggregate_profile(...) CandidateProfile
+  }
+  class CandidateRepository {
+    &lt;&lt;abstract&gt;&gt;
+  }
+  class InterviewRepository {
+    &lt;&lt;abstract&gt;&gt;
+  }
+  class QuestionRepository {
+    &lt;&lt;abstract&gt;&gt;
+  }
+  class ResponseRepository {
+    &lt;&lt;abstract&gt;&gt;
+  }
+  class EvaluationRepository {
+    &lt;&lt;abstract&gt;&gt;
+  }
+  class ReportRepository {
+    &lt;&lt;abstract&gt;&gt;
+  }
+  CandidateService --> CandidateRepository : repo
+  InterviewService --> InterviewRepository : interview_repo
+  InterviewService --> QuestionRepository : question_repo
+  InterviewService --> ResponseRepository : response_repo
+  InterviewService --> EvaluationRepository : evaluation_repo
+  InterviewService --> EvaluationService : evaluation_service
+  ReportService --> ReportRepository : report_repo
+  ReportService --> EvaluationRepository : evaluation_repo
+  ReportService --> InterviewRepository : interview_repo
+  ReportService --> EvaluationService : evaluation_service
+</div>
+</section>
+
+<section class="panel" id="api">
+<h2>5. API + Schemas (Pydantic boundary — isolated from domain by design)</h2>
+<p class="desc">Routers are thin adapters: validate Pydantic schema → call service → map domain to response schema. <code>SubmitAnswerResponse ∘— EvaluationScores</code>, <code>EvaluationRead ∘— EvaluationScores</code>, <code>StartInterviewResponse ∘— QuestionPublic</code>.</p>
+<div class="mermaid">
+classDiagram
+  class CandidateCreate {
+    +string name
+  }
+  class CandidateRead {
+    +string candidate_id
+    +string name
+  }
+  class InterviewCreate {
+    +string candidate_id
+    +int question_count
+  }
+  class InterviewRead {
+    +string interview_id
+    +string status
+  }
+  class QuestionPublic {
+    +string question_id
+    +string question
+  }
+  class StartInterviewResponse {
+    +string interview_id
+    +string status
+  }
+  class SubmitAnswerRequest {
+    +string question_id
+    +string answer
+  }
+  class SubmitAnswerResponse {
+    +string response_id
+    +string status
+  }
+  class EvaluationScores {
+    +float tfidf
+    +float embedding
+    +float relevancy
+    +float concept_coverage
+  }
+  class EvaluationRead {
+    +string evaluation_id
+    +string response_id
+  }
+  class ReportRead {
+    +string interview_id
+    +float overall_score
+  }
+  class CandidatesRouter {
+    &lt;&lt;APIRouter&gt;&gt;
+    +POST /candidates
+    +GET /candidates/id
+  }
+  class InterviewsRouter {
+    &lt;&lt;APIRouter&gt;&gt;
+    +POST /interviews
+    +POST /start
+    +POST /responses
+  }
+  class EvaluationsRouter {
+    &lt;&lt;APIRouter&gt;&gt;
+    +GET /evaluations/id
+  }
+  class ReportsRouter {
+    &lt;&lt;APIRouter&gt;&gt;
+    +POST+GET /report
+  }
+  StartInterviewResponse --> QuestionPublic : question
+  SubmitAnswerResponse --> EvaluationScores : evaluation
+  EvaluationRead --> EvaluationScores : scores
+  CandidatesRouter ..> CandidateCreate : consumes
+  CandidatesRouter ..> CandidateRead : returns
+  InterviewsRouter ..> InterviewCreate : consumes
+  InterviewsRouter ..> StartInterviewResponse : returns
+</div>
+</section>
+
+<section class="panel">
+<h2>6. Class inventory &amp; relationships (reference table)</h2>
+<div class="grid2">
+<div>
+<table><tr><th>Layer</th><th>Classes</th></tr>
+<tr><td>Domain</td><td>Candidate, Question, Interview, InterviewStatus, CandidateResponse, QuestionEvaluation, CandidateProfile, InterviewReport</td></tr>
+<tr><td>ORM</td><td>Base, CandidateORM, QuestionORM, InterviewORM, ResponseORM, EvaluationORM, ReportORM</td></tr>
+<tr><td>Repositories</td><td>6× ABC + 6× InMemory + 6× SA (SQLAlchemy)</td></tr>
+<tr><td>Evaluation</td><td>SimilarityStrategy, TFIDFSimilarity, EmbeddingSimilarity, LLMRelevancyEvaluator, RelevancyResult, ConceptExtractor, ConceptCoverageEvaluator, LLMFeedbackAnalyzer, FeedbackResult, EvaluationService, EvaluationInput</td></tr>
+</table>
+</div>
+<div>
+<table><tr><th>Layer</th><th>Classes</th></tr>
+<tr><td>Services</td><td>CandidateService, InterviewService, ReportService</td></tr>
+<tr><td>Schemas</td><td>CandidateCreate/Read, InterviewCreate/Read, QuestionPublic, StartInterviewResponse, SubmitAnswerRequest/Response, EvaluationScores/Read, ReportRead</td></tr>
+<tr><td>Core</td><td>Settings, LLMClient, LLMConfig, MockLLMClient, OpenAIAdapter</td></tr>
+<tr><td>API</td><td>CandidatesRouter, InterviewsRouter, EvaluationsRouter, ReportsRouter (+ main.py FastAPI app)</td></tr>
+</table>
+</div>
+</div>
+<table><tr><th>Relationship</th><th>Type</th><th>Meaning</th></tr>
+<tr><td><code>X --|&gt; Y</code> rendered as <code>X &lt;|-- Y</code></td><td>Inheritance</td><td>TFIDFSimilarity → SimilarityStrategy; SA* → *Repository ABC; ORM → Base; Schemas → BaseModel</td></tr>
+<tr><td><code>A --&gt; B</code></td><td>Composition / dependency</td><td>Service holds repository; EvaluationService holds 6 evaluators; Router Depends() service</td></tr>
+<tr><td><code>A ..&gt; B</code></td><td>Usage / mapping</td><td>SA repo maps domain ↔ ORM; router maps domain ↔ schema</td></tr>
+<tr><td><code>1 -- *</code></td><td>Multiplicity</td><td>Candidate 1—* Response; Profile 1—* Evaluation; Interview 1—* Response; Response 1—1 Evaluation</td></tr>
+</table>
+<p class="desc" style="margin-top:12px">Design patterns visible: <b>Strategy</b> (SimilarityStrategy), <b>Repository</b> (persistence abstraction + InMemory fakes for tests), <b>Adapter</b> (LLMClient → OpenAI/Mock), <b>Dependency Injection</b> (core/dependencies.py + FastAPI Depends), <b>DTO boundary</b> (Pydantic schemas isolated from domain dataclasses and ORM models).</p>
+</section>
+
+</main>
+<footer>Generated 2026-09-21 · Source of truth: <code>backend/app/**/*.py</code> + <code>design.md</code> · Open <code>class-diagram.html</code> in a browser (needs internet for Mermaid CDN).</footer>
+</body>
+</html>

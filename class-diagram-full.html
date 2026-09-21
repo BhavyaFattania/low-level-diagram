@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Full Low-Level Class Diagram — Fullscreen</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+<style>
+  :root { --bg:#0f172a; --panel:#1e293b; --border:#334155; --text:#e2e8f0; --muted:#94a3b8; --accent:#38bdf8; }
+  * { box-sizing:border-box; }
+  html,body { height:100%; }
+  body { margin:0; font-family:'Segoe UI',system-ui,Arial,sans-serif; background:#0b1220; color:var(--text); overflow:hidden; }
+  #topbar { height:56px; display:flex; align-items:center; gap:10px; padding:0 16px; background:var(--panel); border-bottom:1px solid var(--border); }
+  #topbar h1 { font-size:15px; margin:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  #topbar .spacer { flex:1; }
+  #topbar a, #topbar button { background:#0b1220; color:var(--text); border:1px solid var(--border); border-radius:6px; padding:7px 12px; cursor:pointer; font-size:13px; text-decoration:none; white-space:nowrap; }
+  #topbar a:hover, #topbar button:hover { border-color:var(--accent); }
+  #topbar button.primary { background:var(--accent); color:#0b1220; font-weight:600; border-color:var(--accent); }
+  #wrap { height:calc(100vh - 56px); height:calc(100dvh - 56px); }
+  #diagram { width:100%; height:100%; }
+  #diagram svg { width:100% !important; height:100% !important; max-width:none !important; }
+  #hint { position:fixed; bottom:14px; left:50%; transform:translateX(-50%); background:rgba(7,13,29,.92); border:1px solid var(--border); padding:7px 14px; border-radius:20px; font-size:12px; color:var(--muted); pointer-events:none; transition:opacity .5s; }
+  #err { position:fixed; top:66px; left:16px; right:16px; color:#f87171; font-size:13px; display:none; }
+</style>
+</head>
+<body>
+<div id="topbar">
+  <a href="index.html">← Overview</a>
+  <h1>Full Low-Level Class Diagram — AI Interview Analyzer</h1>
+  <span class="spacer"></span>
+  <button id="btn-zin" title="Zoom in">＋</button>
+  <button id="btn-zout" title="Zoom out">－</button>
+  <button id="btn-fit" title="Fit to screen">Fit</button>
+  <button id="btn-fs" class="primary" title="Toggle fullscreen">⛶ Fullscreen</button>
+</div>
+<div id="wrap">
+<div class="mermaid" id="diagram">
+classDiagram
+  %% ============ DOMAIN ============
+  class Candidate {
+    +string candidate_id
+    +string name
+    +datetime created_at
+    +add_response(response) void
+  }
+  class CandidateResponse {
+    +string response_id
+    +string interview_id
+    +string question_id
+    +string answer
+    +datetime submitted_at
+  }
+  class Question {
+    +string question_id
+    +string question_text
+    +string expected_answer
+    +string category
+    +string difficulty
+  }
+  class Interview {
+    +string interview_id
+    +string candidate_id
+    +InterviewStatus status
+    +start() void
+    +complete() void
+    +fail() void
+  }
+  class InterviewStatus {
+    &lt;&lt;enumeration&gt;&gt;
+    CREATED
+    IN_PROGRESS
+    COMPLETED
+    FAILED
+  }
+  class QuestionEvaluation {
+    +string evaluation_id
+    +string response_id
+    +string question_id
+    +float tfidf_score
+    +float embedding_score
+    +float relevancy_score
+    +float concept_coverage_score
+  }
+  class CandidateProfile {
+    +string candidate_id
+    +string interview_id
+    +float overall_score
+  }
+  class InterviewReport {
+    +string report_id
+    +string candidate_id
+    +string interview_id
+    +float overall_score
+    +string summary
+  }
+  Candidate "1" --> "*" CandidateResponse : holds responses
+  CandidateProfile "1" --> "*" QuestionEvaluation : aggregates
+  Interview --> InterviewStatus : uses
+  %% ============ ORM ============
+  class Base {
+    &lt;&lt;DeclarativeBase&gt;&gt;
+  }
+  class CandidateORM {
+    +string candidate_id PK
+    +string name
+    +datetime created_at
+  }
+  class QuestionORM {
+    +string question_id PK
+    +string question_text
+    +string expected_answer
+    +string category
+    +string difficulty
+  }
+  class InterviewORM {
+    +string interview_id PK
+    +string candidate_id FK
+    +string status
+  }
+  class ResponseORM {
+    +string response_id PK
+    +string interview_id FK
+    +string question_id FK
+    +string candidate_answer
+  }
+  class EvaluationORM {
+    +string evaluation_id PK
+    +string response_id FK UNIQUE
+    +float tfidf_score
+    +float embedding_score
+    +float relevancy_score
+    +float concept_coverage_score
+  }
+  class ReportORM {
+    +string report_id PK
+    +string interview_id FK UNIQUE
+    +float overall_score
+    +string summary
+  }
+  Base &lt;|-- CandidateORM
+  Base &lt;|-- QuestionORM
+  Base &lt;|-- InterviewORM
+  Base &lt;|-- ResponseORM
+  Base &lt;|-- EvaluationORM
+  Base &lt;|-- ReportORM
+  CandidateORM "1" &lt;-- "*" InterviewORM : FK candidate_id
+  InterviewORM "1" &lt;-- "*" ResponseORM : FK interview_id
+  QuestionORM "1" &lt;-- "*" ResponseORM : FK question_id
+  ResponseORM "1" &lt;-- "1" EvaluationORM : FK response_id UNIQUE
+  InterviewORM "1" &lt;-- "1" ReportORM : FK interview_id UNIQUE
+  %% ============ EVALUATION ENGINE ============
+  class SimilarityStrategy {
+    &lt;&lt;abstract&gt;&gt;
+    +calculate(candidate, expected) float
+  }
+  class TFIDFSimilarity {
+    -bool use_sklearn
+    +calculate(candidate, expected) float
+    +uses_sklearn() bool
+  }
+  class EmbeddingSimilarity {
+    +string model_name
+    +calculate(candidate, expected) float
+    +uses_fallback() bool
+  }
+  class LLMRelevancyEvaluator {
+    +evaluate(question, candidate, expected) RelevancyResult
+  }
+  class RelevancyResult {
+    +float relevancy_score
+    +string reasoning
+    +float confidence
+  }
+  class ConceptExtractor {
+    +extract(candidate, expected_concepts) List
+  }
+  class ConceptCoverageEvaluator {
+    +evaluate(identified, expected) float
+    +missing(identified, expected) List
+  }
+  class LLMFeedbackAnalyzer {
+    +analyze(question, candidate, expected) FeedbackResult
+  }
+  class FeedbackResult {
+    +List strengths
+    +List weaknesses
+    +List missing_concepts
+    +List improvements
+  }
+  class EvaluationService {
+    +evaluate(inp) QuestionEvaluation
+    +aggregate_profile(cid, iid, evals) CandidateProfile
+    +generate_report(profile) InterviewReport
+  }
+  class EvaluationInput {
+    +string question_id
+    +string question_text
+    +string expected_answer
+    +string candidate_answer
+    +string response_id
+  }
+  SimilarityStrategy &lt;|-- TFIDFSimilarity : Strategy
+  SimilarityStrategy &lt;|-- EmbeddingSimilarity : Strategy
+  EvaluationService --> SimilarityStrategy : tfidf
+  EvaluationService --> SimilarityStrategy : embedding
+  EvaluationService --> LLMRelevancyEvaluator : relevancy_evaluator
+  EvaluationService --> ConceptExtractor : concept_extractor
+  EvaluationService --> ConceptCoverageEvaluator : concept_coverage
+  EvaluationService --> LLMFeedbackAnalyzer : feedback_analyzer
+  LLMRelevancyEvaluator --> RelevancyResult : returns
+  LLMFeedbackAnalyzer --> FeedbackResult : returns
+  EvaluationService ..> EvaluationInput : consumes
+  EvaluationService ..> QuestionEvaluation : creates
+  EvaluationService ..> CandidateProfile : creates
+  EvaluationService ..> InterviewReport : creates
+  %% ============ CORE / LLM ============
+  class LLMClient {
+    &lt;&lt;abstract&gt;&gt;
+    +generate(prompt) string
+  }
+  class MockLLMClient {
+    +generate(prompt) string
+  }
+  class OpenAIAdapter {
+    +string model
+    +generate(prompt) string
+  }
+  class LLMConfig {
+    +string provider
+    +string model
+  }
+  class Settings {
+    +string DATABASE_URL
+    +string LLM_PROVIDER
+    +string LLM_MODEL
+    +string EMBEDDING_MODEL
+    +float W_TFIDF
+    +float W_EMB
+  }
+  LLMClient &lt;|-- MockLLMClient
+  LLMClient &lt;|-- OpenAIAdapter
+  LLMRelevancyEvaluator --> LLMClient : llm_client
+  LLMFeedbackAnalyzer --> LLMClient : llm_client
+  %% ============ REPOSITORIES ============
+  class CandidateRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(c) Candidate
+    +get_by_id(id) Candidate
+    +list_all() List
+  }
+  class SACandidateRepository {
+    +save(c) Candidate
+    +get_by_id(id) Candidate
+  }
+  class QuestionRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(q) Question
+    +get_by_id(id) Question
+    +get_random() Question
+  }
+  class SAQuestionRepository {
+    +save(q) Question
+    +get_random() Question
+  }
+  class InterviewRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(i) Interview
+    +get_by_id(id) Interview
+  }
+  class SAInterviewRepository {
+    +save(i) Interview
+    +get_by_id(id) Interview
+  }
+  class ResponseRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(r) CandidateResponse
+    +get_by_id(id) CandidateResponse
+  }
+  class SAResponseRepository {
+    +save(r) CandidateResponse
+  }
+  class EvaluationRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(e) QuestionEvaluation
+    +get_by_id(id) QuestionEvaluation
+  }
+  class SAEvaluationRepository {
+    +save(e) QuestionEvaluation
+    +get_by_interview_id(iid) List
+  }
+  class ReportRepository {
+    &lt;&lt;abstract&gt;&gt;
+    +save(r) InterviewReport
+    +get_by_interview_id(iid) InterviewReport
+  }
+  class SAReportRepository {
+    +save(r) InterviewReport
+  }
+  CandidateRepository &lt;|-- SACandidateRepository
+  QuestionRepository &lt;|-- SAQuestionRepository
+  InterviewRepository &lt;|-- SAInterviewRepository
+  ResponseRepository &lt;|-- SAResponseRepository
+  EvaluationRepository &lt;|-- SAEvaluationRepository
+  ReportRepository &lt;|-- SAReportRepository
+  SACandidateRepository ..> Candidate : persists
+  SACandidateRepository ..> CandidateORM : maps
+  SAQuestionRepository ..> Question : persists
+  SAInterviewRepository ..> Interview : persists
+  SAResponseRepository ..> CandidateResponse : persists
+  SAEvaluationRepository ..> QuestionEvaluation : persists
+  SAReportRepository ..> InterviewReport : persists
+  %% ============ SERVICES ============
+  class CandidateService {
+    +create_candidate(name) Candidate
+    +get_candidate(id) Candidate
+    +list_candidates() List
+  }
+  class InterviewService {
+    +create_interview(cid) Interview
+    +start_interview(iid) Tuple
+    +submit_answer(iid, qid, ans) Tuple
+    +complete_interview(iid) Interview
+  }
+  class ReportService {
+    +generate_report(iid) InterviewReport
+    +get_report(iid) InterviewReport
+  }
+  CandidateService --> CandidateRepository : repo
+  InterviewService --> InterviewRepository : interview_repo
+  InterviewService --> QuestionRepository : question_repo
+  InterviewService --> ResponseRepository : response_repo
+  InterviewService --> EvaluationRepository : evaluation_repo
+  InterviewService --> EvaluationService : evaluation_service
+  ReportService --> ReportRepository : report_repo
+  ReportService --> EvaluationRepository : evaluation_repo
+  ReportService --> InterviewRepository : interview_repo
+  ReportService --> EvaluationService : evaluation_service
+  %% ============ SCHEMAS + API ============
+  class CandidateCreate {
+    +string name
+  }
+  class CandidateRead {
+    +string candidate_id
+    +string name
+  }
+  class InterviewCreate {
+    +string candidate_id
+    +string category
+    +int question_count
+  }
+  class InterviewRead {
+    +string interview_id
+    +string status
+  }
+  class QuestionPublic {
+    +string question_id
+    +string question
+  }
+  class EvaluationScores {
+    +float tfidf
+    +float embedding
+    +float relevancy
+    +float concept_coverage
+  }
+  class EvaluationRead {
+    +string evaluation_id
+    +string response_id
+  }
+  class ReportRead {
+    +string interview_id
+    +float overall_score
+    +string summary
+  }
+  class CandidatesRouter {
+    &lt;&lt;APIRouter&gt;&gt;
+    +POST /candidates
+    +GET /candidates/id
+  }
+  class InterviewsRouter {
+    &lt;&lt;APIRouter&gt;&gt;
+    +POST /interviews
+    +POST /interviews/id/start
+    +POST /interviews/id/responses
+  }
+  class EvaluationsRouter {
+    &lt;&lt;APIRouter&gt;&gt;
+    +GET /evaluations/id
+  }
+  class ReportsRouter {
+    &lt;&lt;APIRouter&gt;&gt;
+    +POST /reports/interviews/id/report
+    +GET /reports/interviews/id/report
+  }
+  CandidatesRouter ..> CandidateService : Depends
+  InterviewsRouter ..> InterviewService : Depends
+  EvaluationsRouter ..> SAEvaluationRepository : uses
+  ReportsRouter ..> ReportService : Depends
+  EvaluationRead --> EvaluationScores : scores
+</div>
+</div>
+<div id="err"></div>
+<div id="hint">Scroll to zoom · drag to pan · ⛶ for fullscreen</div>
+<script>
+mermaid.initialize({ startOnLoad: false, theme: 'dark', securityLevel: 'loose' });
+let panZoom = null;
+function showError(msg) { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = msg; }
+mermaid.run({ querySelector: '#diagram' }).then(() => {
+  const svg = document.querySelector('#diagram svg');
+  if (!svg) { showError('Diagram rendered with no SVG output.'); return; }
+  svg.removeAttribute('width'); svg.removeAttribute('height');
+  panZoom = svgPanZoom(svg, { zoomEnabled: true, panEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.15, maxZoom: 10, dblClickZoomEnabled: true, mouseWheelZoomEnabled: true });
+  window.addEventListener('resize', () => { panZoom.resize(); panZoom.fit(); panZoom.center(); });
+  document.getElementById('btn-zin').onclick = () => panZoom.zoomIn();
+  document.getElementById('btn-zout').onclick = () => panZoom.zoomOut();
+  document.getElementById('btn-fit').onclick = () => { panZoom.fit(); panZoom.center(); };
+  setTimeout(() => { const h = document.getElementById('hint'); h.style.opacity = '0'; setTimeout(() => h.remove(), 600); }, 5000);
+}).catch((err) => showError('Mermaid render error: ' + err));
+document.getElementById('btn-fs').onclick = () => {
+  if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(() => {}); }
+  else { document.exitFullscreen(); }
+};
+document.addEventListener('fullscreenchange', () => {
+  document.getElementById('btn-fs').textContent = document.fullscreenElement ? '⛶ Exit fullscreen' : '⛶ Fullscreen';
+  if (panZoom) { setTimeout(() => { panZoom.resize(); panZoom.fit(); panZoom.center(); }, 100); }
+});
+</script>
+</body>
+</html>
